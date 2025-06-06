@@ -54,6 +54,70 @@ export const sampleTracks: Track[] = [
     cover: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&h=400&fit=crop&crop=center",
     url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
     duration: "5:03"
+  },
+  {
+    id: 5,
+    title: "Ocean Waves",
+    artist: "Deep Blue",
+    cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop&crop=center",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+    duration: "4:33"
+  },
+  {
+    id: 6,
+    title: "Electric Storm",
+    artist: "Thunder Collective",
+    cover: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop&crop=center",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
+    duration: "3:57"
+  },
+  {
+    id: 7,
+    title: "Midnight Drive",
+    artist: "Neon City",
+    cover: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&h=400&fit=crop&crop=center",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
+    duration: "4:21"
+  },
+  {
+    id: 8,
+    title: "Starlight",
+    artist: "Cosmic Dreams",
+    cover: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&h=400&fit=crop&crop=center",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+    duration: "3:16"
+  },
+  {
+    id: 9,
+    title: "City Lights",
+    artist: "Urban Pulse",
+    cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&h=400&fit=crop&crop=center",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
+    duration: "4:44"
+  },
+  {
+    id: 10,
+    title: "Digital Love",
+    artist: "Cyber Hearts",
+    cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop&crop=center",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
+    duration: "3:39"
+  },
+  {
+    id: 11,
+    title: "Sunset Boulevard",
+    artist: "Golden Hour",
+    cover: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop&crop=center",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3",
+    duration: "4:18"
+  },
+  {
+    id: 12,
+    title: "Rhythm & Soul",
+    artist: "Groove Masters",
+    cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop&crop=center",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3",
+    duration: "3:52"
   }
 ];
 

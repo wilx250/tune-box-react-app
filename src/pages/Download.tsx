@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download as DownloadIcon, Music, Mail, MessageCircle, Instagram } from 'lucide-react';
+import { Download as DownloadIcon } from 'lucide-react';
 import { useMusic } from '@/contexts/MusicContext';
 
 const Download = () => {
@@ -16,7 +16,7 @@ const Download = () => {
         <p className="text-gray-300">Download your favorite music for offline listening</p>
       </div>
 
-      <div className="grid gap-6 mb-12">
+      <div className="grid gap-6">
         {tracks.map((track) => (
           <Card key={track.id} className="bg-white/10 backdrop-blur-lg border-white/20 hover:bg-white/20 transition-all duration-300">
             <CardContent className="p-6">
@@ -53,60 +53,6 @@ const Download = () => {
           </Card>
         ))}
       </div>
-
-      <Card className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 backdrop-blur-lg border-white/20">
-        <CardContent className="p-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white mb-4">Need Help?</h2>
-            <p className="text-gray-300">Contact us through any of these channels</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            <a 
-              href="mailto:nzabahimanawilson1@gmail.com"
-              className="flex items-center space-x-4 p-4 bg-white/10 rounded-lg hover:bg-white/20 transition-all duration-300"
-            >
-              <div className="bg-red-500 p-3 rounded-lg">
-                <Mail className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold">Email</h3>
-                <p className="text-gray-300 text-sm">Get in touch via email</p>
-              </div>
-            </a>
-
-            <a 
-              href="https://wa.me/250790101980"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center space-x-4 p-4 bg-white/10 rounded-lg hover:bg-white/20 transition-all duration-300"
-            >
-              <div className="bg-green-500 p-3 rounded-lg">
-                <MessageCircle className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold">WhatsApp</h3>
-                <p className="text-gray-300 text-sm">Chat with us instantly</p>
-              </div>
-            </a>
-
-            <a 
-              href="https://www.instagram.com/wilx_gram?igsh=ZTM2bmNlbGVkem4x"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center space-x-4 p-4 bg-white/10 rounded-lg hover:bg-white/20 transition-all duration-300"
-            >
-              <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-3 rounded-lg">
-                <Instagram className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold">Instagram</h3>
-                <p className="text-gray-300 text-sm">Follow us for updates</p>
-              </div>
-            </a>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +15,7 @@ import Download from "./pages/Download";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
 import MusicProvider from "./contexts/MusicContext";
+import Footer from "./components/Footer";
 
 const queryClient = new QueryClient();
 
@@ -39,17 +39,20 @@ const App = () => {
             <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
               <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-screen">
                 <Navbar toggleTheme={toggleTheme} isDarkMode={isDarkMode} />
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/search" element={<Search />} />
-                  <Route path="/library" element={<Library />} />
-                  <Route path="/now-playing" element={<NowPlaying />} />
-                  <Route path="/playlists" element={<Playlists />} />
-                  <Route path="/premium" element={<Premium />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/download" element={<Download />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                <main>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/search" element={<Search />} />
+                    <Route path="/library" element={<Library />} />
+                    <Route path="/now-playing" element={<NowPlaying />} />
+                    <Route path="/playlists" element={<Playlists />} />
+                    <Route path="/premium" element={<Premium />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/download" element={<Download />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </main>
+                <Footer />
               </div>
             </div>
           </BrowserRouter>
