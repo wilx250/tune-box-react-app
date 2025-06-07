@@ -2,7 +2,8 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Search, Library, Music, Crown, Download, User, Sun, Moon } from 'lucide-react';
+import { Home, Search, Library, Music, Crown, Download, User, Sun, Moon, BookOpen, MessageCircle, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavbarProps {
   toggleTheme: () => void;
@@ -11,6 +12,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ toggleTheme, isDarkMode }) => {
   const location = useLocation();
+  const { isAuthenticated, user, logout } = useAuth();
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
@@ -18,6 +20,8 @@ const Navbar: React.FC<NavbarProps> = ({ toggleTheme, isDarkMode }) => {
     { path: '/library', icon: Library, label: 'Library' },
     { path: '/now-playing', icon: Music, label: 'Now Playing' },
     { path: '/playlists', icon: Music, label: 'Playlists' },
+    { path: '/stories', icon: BookOpen, label: 'Stories' },
+    { path: '/chat', icon: MessageCircle, label: 'AI Chat' },
     { path: '/premium', icon: Crown, label: 'Premium' },
     { path: '/download', icon: Download, label: 'Download' },
   ];
@@ -63,11 +67,26 @@ const Navbar: React.FC<NavbarProps> = ({ toggleTheme, isDarkMode }) => {
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </Button>
             
-            <Link to="/login">
-              <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white hover:bg-white/10">
-                <User size={20} />
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-gray-300 hidden sm:block">Hi, {user?.name}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={logout}
+                  className="text-gray-300 hover:text-white hover:bg-white/10"
+                  title="Logout"
+                >
+                  <LogOut size={20} />
+                </Button>
+              </div>
+            ) : (
+              <Link to="/login">
+                <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white hover:bg-white/10">
+                  <User size={20} />
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 

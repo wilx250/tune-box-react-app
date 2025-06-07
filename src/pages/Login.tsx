@@ -5,22 +5,77 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { User, Mail, Lock } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login, isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple demo login - in real app you'd integrate with Firebase
-    console.log('Form submitted:', formData);
-    navigate('/');
+    setIsLoading(true);
+
+    try {
+      if (isLogin) {
+        const success = await login(formData.email, formData.password);
+        if (success) {
+          toast({
+            title: "Welcome back!",
+            description: "Successfully logged in to TuneBox.",
+          });
+          navigate('/');
+        } else {
+          toast({
+            title: "Login failed",
+            description: "Please check your credentials.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        // Sign up logic
+        if (formData.password !== formData.confirmPassword) {
+          toast({
+            title: "Password mismatch",
+            description: "Passwords do not match.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        const success = await login(formData.email, formData.password);
+        if (success) {
+          toast({
+            title: "Account created!",
+            description: "Welcome to TuneBox.",
+          });
+          navigate('/');
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,9 +157,10 @@ const Login = () => {
 
             <Button 
               type="submit" 
+              disabled={isLoading}
               className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
             >
-              {isLogin ? 'Sign In' : 'Create Account'}
+              {isLoading ? 'Loading...' : (isLogin ? 'Sign In' : 'Create Account')}
             </Button>
           </form>
 

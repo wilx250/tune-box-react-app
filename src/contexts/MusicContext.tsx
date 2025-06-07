@@ -10,14 +10,24 @@ export interface Track {
   duration?: string;
 }
 
+export interface Story {
+  id: number;
+  title: string;
+  author: string;
+  content: string;
+  timestamp: string;
+}
+
 interface MusicContextType {
   currentTrack: Track | null;
   isPlaying: boolean;
   tracks: Track[];
+  stories: Story[];
   setCurrentTrack: (track: Track) => void;
   setIsPlaying: (playing: boolean) => void;
   playNext: () => void;
   playPrevious: () => void;
+  addStory: (story: Omit<Story, 'id' | 'timestamp'>) => void;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
@@ -121,10 +131,28 @@ export const sampleTracks: Track[] = [
   }
 ];
 
+const sampleStories: Story[] = [
+  {
+    id: 1,
+    title: "My Musical Journey",
+    author: "You",
+    content: "Started my music collection with these amazing tracks. The sound quality and variety keep me coming back for more!",
+    timestamp: new Date().toISOString()
+  },
+  {
+    id: 2,
+    title: "Discovering New Beats",
+    author: "Music Lover",
+    content: "Found some incredible synthwave tracks today. The atmospheric sounds transport you to another dimension.",
+    timestamp: new Date(Date.now() - 3600000).toISOString()
+  }
+];
+
 const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [tracks] = useState<Track[]>(sampleTracks);
+  const [stories, setStories] = useState<Story[]>(sampleStories);
 
   const playNext = () => {
     if (currentTrack) {
@@ -142,15 +170,26 @@ const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     }
   };
 
+  const addStory = (newStory: Omit<Story, 'id' | 'timestamp'>) => {
+    const story: Story = {
+      ...newStory,
+      id: Date.now(),
+      timestamp: new Date().toISOString()
+    };
+    setStories(prev => [story, ...prev]);
+  };
+
   return (
     <MusicContext.Provider value={{
       currentTrack,
       isPlaying,
       tracks,
+      stories,
       setCurrentTrack,
       setIsPlaying,
       playNext,
-      playPrevious
+      playPrevious,
+      addStory
     }}>
       {children}
     </MusicContext.Provider>
