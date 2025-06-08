@@ -17,6 +17,7 @@ const Navbar: React.FC<NavbarProps> = ({ toggleTheme, isDarkMode }) => {
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
     { path: '/search', icon: Search, label: 'Search' },
+    { path: '/artists', icon: User, label: 'Artists' },
     { path: '/library', icon: Library, label: 'Library' },
     { path: '/now-playing', icon: Music, label: 'Now Playing' },
     { path: '/playlists', icon: Music, label: 'Playlists' },
@@ -69,7 +70,14 @@ const Navbar: React.FC<NavbarProps> = ({ toggleTheme, isDarkMode }) => {
             
             {isAuthenticated ? (
               <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-300 hidden sm:block">Hi, {user?.name}</span>
+                <Link to="/profile" className="text-sm text-gray-300 hover:text-white hidden sm:block">
+                  Hi, {user?.name}
+                </Link>
+                <Link to="/profile">
+                  <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white hover:bg-white/10">
+                    <User size={20} />
+                  </Button>
+                </Link>
                 <Button
                   variant="ghost"
                   size="icon"

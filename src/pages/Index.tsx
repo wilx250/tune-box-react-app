@@ -2,16 +2,35 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Heart, Download } from 'lucide-react';
+import { Play, Heart, Download, User, Search, BookOpen } from 'lucide-react';
 import { useMusic } from '@/contexts/MusicContext';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
-  const { tracks, setCurrentTrack, setIsPlaying, currentTrack } = useMusic();
+  const { tracks, setCurrentTrack, setIsPlaying, addToFavorites, userProfile, downloadTrack } = useMusic();
 
   const handlePlayTrack = (track: any) => {
     setCurrentTrack(track);
     setIsPlaying(true);
   };
+
+  const isFavorite = (trackId: number) => {
+    return userProfile.favorites.some(fav => fav.id === trackId);
+  };
+
+  // Featured tracks from different artists
+  const featuredTracks = tracks.filter(track => 
+    ['Ed Sheeran', 'Bebe Rexha', 'Kira Kosalin'].includes(track.artist)
+  ).slice(0, 8);
+
+  const categories = [
+    { name: 'African Hits', count: tracks.filter(t => t.category === 'African Hits').length, color: 'from-orange-500 to-red-500' },
+    { name: 'Baby Songs', count: tracks.filter(t => t.category === 'Baby Songs').length, color: 'from-pink-500 to-purple-500' },
+    { name: 'Educational Songs', count: tracks.filter(t => t.category === 'Educational Songs').length, color: 'from-green-500 to-blue-500' },
+    { name: 'Rwandan Music', count: tracks.filter(t => t.category === 'Rwandan Music').length, color: 'from-yellow-500 to-orange-500' },
+    { name: 'Gospel', count: tracks.filter(t => t.category === 'Gospel').length, color: 'from-indigo-500 to-purple-500' },
+    { name: 'Lo-Fi', count: tracks.filter(t => t.category === 'Lo-Fi').length, color: 'from-teal-500 to-green-500' },
+  ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -19,15 +38,67 @@ const Index = () => {
         <h1 className="text-4xl sm:text-6xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent mb-4">
           Welcome to TuneBox
         </h1>
-        <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-          Discover amazing music, create playlists, and enjoy high-quality streaming
+        <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-4">
+          Discover amazing music, create playlists, and enjoy high-quality streaming with 1000+ songs
         </p>
+        <p className="text-purple-300 font-semibold">Powered & Designed by Wilx Team 🇷🇼</p>
       </div>
 
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <Link to="/search">
+          <Card className="bg-gradient-to-br from-blue-600/20 to-indigo-600/20 backdrop-blur-lg border-white/20 hover:bg-blue-600/30 transition-all duration-300 cursor-pointer">
+            <CardContent className="p-6 text-center">
+              <Search className="h-12 w-12 text-blue-400 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2">Search Music</h3>
+              <p className="text-gray-300">Find songs by artist, genre, or mood</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/artists">
+          <Card className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 backdrop-blur-lg border-white/20 hover:bg-purple-600/30 transition-all duration-300 cursor-pointer">
+            <CardContent className="p-6 text-center">
+              <User className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2">Featured Artists</h3>
+              <p className="text-gray-300">Ed Sheeran, Bebe Rexha, Kira Kosalin & more</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/stories">
+          <Card className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 backdrop-blur-lg border-white/20 hover:bg-green-600/30 transition-all duration-300 cursor-pointer">
+            <CardContent className="p-6 text-center">
+              <BookOpen className="h-12 w-12 text-green-400 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2">Music Stories</h3>
+              <p className="text-gray-300">Read & listen to musical journeys</p>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
+      {/* Music Categories */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-bold text-white mb-6">Music Categories</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {categories.map((category) => (
+            <Card key={category.name} className="bg-white/10 backdrop-blur-lg border-white/20 hover:bg-white/20 transition-all duration-300 cursor-pointer">
+              <CardContent className="p-4 text-center">
+                <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${category.color} mx-auto mb-3 flex items-center justify-center`}>
+                  <span className="text-white font-bold">{category.count}</span>
+                </div>
+                <h3 className="text-white font-medium text-sm">{category.name}</h3>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* Featured Tracks */}
       <section className="mb-12">
         <h2 className="text-2xl font-bold text-white mb-6">Featured Tracks</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {tracks.map((track) => (
+          {featuredTracks.map((track) => (
             <Card key={track.id} className="bg-white/10 backdrop-blur-lg border-white/20 hover:bg-white/20 transition-all duration-300 group">
               <CardContent className="p-4">
                 <div className="relative mb-4">
@@ -46,14 +117,25 @@ const Index = () => {
                 </div>
                 
                 <h3 className="text-white font-semibold mb-1 truncate">{track.title}</h3>
-                <p className="text-gray-300 text-sm mb-3 truncate">{track.artist}</p>
+                <p className="text-gray-300 text-sm mb-1 truncate">{track.artist}</p>
+                <p className="text-gray-400 text-xs mb-2">{track.genre} • {track.mood}</p>
                 <p className="text-gray-400 text-xs mb-3">{track.duration}</p>
                 
                 <div className="flex items-center justify-between">
-                  <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-400">
-                    <Heart size={16} />
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className={`${isFavorite(track.id) ? 'text-red-400' : 'text-gray-400'} hover:text-red-400`}
+                    onClick={() => addToFavorites(track)}
+                  >
+                    <Heart size={16} fill={isFavorite(track.id) ? 'currentColor' : 'none'} />
                   </Button>
-                  <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-gray-400 hover:text-white"
+                    onClick={() => downloadTrack(track)}
+                  >
                     <Download size={16} />
                   </Button>
                 </div>
@@ -63,17 +145,22 @@ const Index = () => {
         </div>
       </section>
 
-      <section className="grid md:grid-cols-2 gap-8 mb-12">
+      {/* App Features */}
+      <section className="grid md:grid-cols-2 gap-8">
         <Card className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 backdrop-blur-lg border-white/20 p-8">
           <h3 className="text-2xl font-bold text-white mb-4">Create Playlists</h3>
           <p className="text-gray-300 mb-6">Organize your favorite tracks and discover new music based on your taste.</p>
-          <Button className="bg-purple-500 hover:bg-purple-600">Get Started</Button>
+          <Link to="/playlists">
+            <Button className="bg-purple-500 hover:bg-purple-600">Get Started</Button>
+          </Link>
         </Card>
         
         <Card className="bg-gradient-to-br from-blue-600/20 to-indigo-600/20 backdrop-blur-lg border-white/20 p-8">
           <h3 className="text-2xl font-bold text-white mb-4">Premium Features</h3>
           <p className="text-gray-300 mb-6">Unlock HD streaming, offline downloads, and exclusive content.</p>
-          <Button className="bg-blue-500 hover:bg-blue-600">Upgrade Now</Button>
+          <Link to="/premium">
+            <Button className="bg-blue-500 hover:bg-blue-600">Upgrade Now</Button>
+          </Link>
         </Card>
       </section>
     </div>

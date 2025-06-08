@@ -15,6 +15,9 @@ import Chat from "./pages/Chat";
 import Premium from "./pages/Premium";
 import Login from "./pages/Login";
 import Download from "./pages/Download";
+import Artists from "./pages/Artists";
+import ArtistDetail from "./pages/ArtistDetail";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -49,9 +52,16 @@ const App = () => {
                     <Routes>
                       <Route path="/" element={<Index />} />
                       <Route path="/search" element={<Search />} />
+                      <Route path="/artists" element={<Artists />} />
+                      <Route path="/artist/:artistName" element={<ArtistDetail />} />
                       <Route path="/library" element={
                         <ProtectedRoute>
                           <Library />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/profile" element={
+                        <ProtectedRoute>
+                          <Profile />
                         </ProtectedRoute>
                       } />
                       <Route path="/now-playing" element={<NowPlaying />} />
