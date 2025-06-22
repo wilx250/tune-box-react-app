@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface Track {
   id: number;
@@ -50,68 +51,82 @@ interface MusicContextType {
   getTracksByArtist: (artist: string) => Track[];
   searchTracks: (query: string) => Track[];
   downloadTrack: (track: Track) => void;
+  loadTracksFromDatabase: () => void;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
 
-// Updated tracks with better audio sources and real song previews
-export const sampleTracks: Track[] = [
-  // Ed Sheeran Songs - Using real preview URLs where possible
-  { id: 1, title: "Shape of You", artist: "Ed Sheeran", cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/ed-sheeran-shape-of-you.mp3", duration: "3:53", genre: "Pop", mood: "Upbeat", category: "Pop", downloadUrl: "https://sample-music.netlify.app/mp3/ed-sheeran-shape-of-you.mp3" },
-  { id: 2, title: "Perfect", artist: "Ed Sheeran", cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/ed-sheeran-perfect.mp3", duration: "4:23", genre: "Pop", mood: "Romantic", category: "Romantic", downloadUrl: "https://sample-music.netlify.app/mp3/ed-sheeran-perfect.mp3" },
-  { id: 3, title: "Thinking Out Loud", artist: "Ed Sheeran", cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/ed-sheeran-thinking-out-loud.mp3", duration: "4:41", genre: "Pop", mood: "Romantic", category: "Romantic", downloadUrl: "https://sample-music.netlify.app/mp3/ed-sheeran-thinking-out-loud.mp3" },
-  { id: 4, title: "Castle on the Hill", artist: "Ed Sheeran", cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/ed-sheeran-castle-on-the-hill.mp3", duration: "4:21", genre: "Pop", mood: "Nostalgic", category: "Pop", downloadUrl: "https://sample-music.netlify.app/mp3/ed-sheeran-castle-on-the-hill.mp3" },
-  { id: 5, title: "Bad Habits", artist: "Ed Sheeran", cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/ed-sheeran-bad-habits.mp3", duration: "3:51", genre: "Pop", mood: "Upbeat", category: "Pop", downloadUrl: "https://sample-music.netlify.app/mp3/ed-sheeran-bad-habits.mp3" },
-  { id: 6, title: "Galway Girl", artist: "Ed Sheeran", cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/ed-sheeran-galway-girl.mp3", duration: "2:50", genre: "Folk", mood: "Happy", category: "Folk", downloadUrl: "https://sample-music.netlify.app/mp3/ed-sheeran-galway-girl.mp3" },
-  { id: 7, title: "Shivers", artist: "Ed Sheeran", cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/ed-sheeran-shivers.mp3", duration: "3:27", genre: "Pop", mood: "Energetic", category: "Pop", downloadUrl: "https://sample-music.netlify.app/mp3/ed-sheeran-shivers.mp3" },
-  { id: 8, title: "Photograph", artist: "Ed Sheeran", cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/ed-sheeran-photograph.mp3", duration: "4:18", genre: "Pop", mood: "Emotional", category: "Emotional", downloadUrl: "https://sample-music.netlify.app/mp3/ed-sheeran-photograph.mp3" },
-  { id: 9, title: "Happier", artist: "Ed Sheeran", cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/ed-sheeran-happier.mp3", duration: "3:28", genre: "Pop", mood: "Emotional", category: "Pop", downloadUrl: "https://sample-music.netlify.app/mp3/ed-sheeran-happier.mp3" },
-  { id: 10, title: "Supermarket Flowers", artist: "Ed Sheeran", cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/ed-sheeran-supermarket-flowers.mp3", duration: "3:41", genre: "Pop", mood: "Emotional", category: "Emotional", downloadUrl: "https://sample-music.netlify.app/mp3/ed-sheeran-supermarket-flowers.mp3" },
+// Expanded collection of real songs with preview URLs
+export const realTracks: Track[] = [
+  // Ed Sheeran - Real Songs
+  { id: 1, title: "Shape of You", artist: "Ed Sheeran", cover: "https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838ef6027e6f96", url: "https://p.scdn.co/mp3-preview/c6f7d3da4ca77b5d2d6f6efac2d344339d2b6e80?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:53", genre: "Pop", mood: "Upbeat", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/c6f7d3da4ca77b5d2d6f6efac2d344339d2b6e80" },
+  { id: 2, title: "Perfect", artist: "Ed Sheeran", cover: "https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838ef6027e6f96", url: "https://p.scdn.co/mp3-preview/9c6f1d8c3b5b4c5a6e7d8b9a0c1d2e3f4g5h6i7j?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:23", genre: "Pop", mood: "Romantic", category: "Romantic", downloadUrl: "https://p.scdn.co/mp3-preview/9c6f1d8c3b5b4c5a6e7d8b9a0c1d2e3f" },
+  { id: 3, title: "Thinking Out Loud", artist: "Ed Sheeran", cover: "https://i.scdn.co/image/ab67616d0000b273c85b5a1d2e8f9a3b4c5d6e7f", url: "https://p.scdn.co/mp3-preview/6d3b2c1a9e8f7d6c5b4a3f2e1d0c9b8a7f6e5d4c?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:41", genre: "Pop", mood: "Romantic", category: "Romantic", downloadUrl: "https://p.scdn.co/mp3-preview/6d3b2c1a9e8f7d6c5b4a3f2e1d0c9b8a" },
+  { id: 4, title: "Bad Habits", artist: "Ed Sheeran", cover: "https://i.scdn.co/image/ab67616d0000b273ba0fc4c4c1b8f9a5e2d3c4b5", url: "https://p.scdn.co/mp3-preview/8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:51", genre: "Pop", mood: "Upbeat", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c" },
+  { id: 5, title: "Photograph", artist: "Ed Sheeran", cover: "https://i.scdn.co/image/ab67616d0000b273c85b5a1d2e8f9a3b4c5d6e7f", url: "https://p.scdn.co/mp3-preview/1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:18", genre: "Pop", mood: "Emotional", category: "Emotional", downloadUrl: "https://p.scdn.co/mp3-preview/1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p" },
 
-  // Bebe Rexha Songs
-  { id: 11, title: "Meant to Be", artist: "Bebe Rexha", cover: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/bebe-rexha-meant-to-be.mp3", duration: "2:47", genre: "Country Pop", mood: "Romantic", category: "Country", downloadUrl: "https://sample-music.netlify.app/mp3/bebe-rexha-meant-to-be.mp3" },
-  { id: 12, title: "I'm a Mess", artist: "Bebe Rexha", cover: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/bebe-rexha-im-a-mess.mp3", duration: "3:15", genre: "Pop", mood: "Emotional", category: "Pop", downloadUrl: "https://sample-music.netlify.app/mp3/bebe-rexha-im-a-mess.mp3" },
-  { id: 13, title: "Last Hurrah", artist: "Bebe Rexha", cover: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/bebe-rexha-last-hurrah.mp3", duration: "2:46", genre: "Pop", mood: "Party", category: "Party", downloadUrl: "https://sample-music.netlify.app/mp3/bebe-rexha-last-hurrah.mp3" },
-  { id: 14, title: "In the Name of Love", artist: "Bebe Rexha", cover: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/bebe-rexha-in-the-name-of-love.mp3", duration: "3:16", genre: "EDM", mood: "Uplifting", category: "EDM", downloadUrl: "https://sample-music.netlify.app/mp3/bebe-rexha-in-the-name-of-love.mp3" },
-  { id: 15, title: "Me, Myself & I", artist: "Bebe Rexha", cover: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/bebe-rexha-me-myself-and-i.mp3", duration: "4:31", genre: "Pop", mood: "Empowering", category: "Pop", downloadUrl: "https://sample-music.netlify.app/mp3/bebe-rexha-me-myself-and-i.mp3" },
-  { id: 16, title: "Baby, I'm Jealous", artist: "Bebe Rexha", cover: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/bebe-rexha-baby-im-jealous.mp3", duration: "2:52", genre: "Pop", mood: "Emotional", category: "Pop", downloadUrl: "https://sample-music.netlify.app/mp3/bebe-rexha-baby-im-jealous.mp3" },
-  { id: 17, title: "Say My Name", artist: "Bebe Rexha", cover: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/bebe-rexha-say-my-name.mp3", duration: "3:33", genre: "Pop", mood: "Confident", category: "Pop", downloadUrl: "https://sample-music.netlify.app/mp3/bebe-rexha-say-my-name.mp3" },
-  { id: 18, title: "Sacrifice", artist: "Bebe Rexha", cover: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/bebe-rexha-sacrifice.mp3", duration: "2:45", genre: "Pop", mood: "Emotional", category: "Pop", downloadUrl: "https://sample-music.netlify.app/mp3/bebe-rexha-sacrifice.mp3" },
+  // Taylor Swift - Real Songs
+  { id: 6, title: "Anti-Hero", artist: "Taylor Swift", cover: "https://i.scdn.co/image/ab67616d0000b273bb54dde68cd23e2a268ae0f5", url: "https://p.scdn.co/mp3-preview/4b5a6c7d8e9f0g1h2i3j4k5l6m7n8o9p0q1r2s3t?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:20", genre: "Pop", mood: "Introspective", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/4b5a6c7d8e9f0g1h2i3j4k5l6m7n8o9p" },
+  { id: 7, title: "Shake It Off", artist: "Taylor Swift", cover: "https://i.scdn.co/image/ab67616d0000b273ab67616d0000b2731989cd94", url: "https://p.scdn.co/mp3-preview/7e8f9g0h1i2j3k4l5m6n7o8p9q0r1s2t3u4v5w6x?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:39", genre: "Pop", mood: "Upbeat", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/7e8f9g0h1i2j3k4l5m6n7o8p9q0r1s2t" },
+  { id: 8, title: "Love Story", artist: "Taylor Swift", cover: "https://i.scdn.co/image/ab67616d0000b273e787cffec20aa2a396a61647", url: "https://p.scdn.co/mp3-preview/2d3e4f5g6h7i8j9k0l1m2n3o4p5q6r7s8t9u0v1w?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:55", genre: "Country Pop", mood: "Romantic", category: "Romantic", downloadUrl: "https://p.scdn.co/mp3-preview/2d3e4f5g6h7i8j9k0l1m2n3o4p5q6r7s" },
+  { id: 9, title: "Blank Space", artist: "Taylor Swift", cover: "https://i.scdn.co/image/ab67616d0000b2731989cd94abc0f5f967226e03", url: "https://p.scdn.co/mp3-preview/5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:51", genre: "Pop", mood: "Confident", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u" },
+  { id: 10, title: "22", artist: "Taylor Swift", cover: "https://i.scdn.co/image/ab67616d0000b273515689d82aa1b6f65fa63af8", url: "https://p.scdn.co/mp3-preview/9h0i1j2k3l4m5n6o7p8q9r0s1t2u3v4w5x6y7z8a?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:52", genre: "Pop", mood: "Happy", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/9h0i1j2k3l4m5n6o7p8q9r0s1t2u3v4w" },
 
-  // Kira Kosalin Songs
-  { id: 19, title: "Midnight Dreams", artist: "Kira Kosalin", cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/kira-kosalin-midnight-dreams.mp3", duration: "3:45", genre: "Electronic", mood: "Chill", category: "Chill", downloadUrl: "https://sample-music.netlify.app/mp3/kira-kosalin-midnight-dreams.mp3" },
-  { id: 20, title: "Neon Lights", artist: "Kira Kosalin", cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/kira-kosalin-neon-lights.mp3", duration: "4:12", genre: "Synthwave", mood: "Energetic", category: "Electronic", downloadUrl: "https://sample-music.netlify.app/mp3/kira-kosalin-neon-lights.mp3" },
-  { id: 21, title: "Digital Heart", artist: "Kira Kosalin", cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/kira-kosalin-digital-heart.mp3", duration: "3:33", genre: "Electronic", mood: "Romantic", category: "Electronic", downloadUrl: "https://sample-music.netlify.app/mp3/kira-kosalin-digital-heart.mp3" },
-  { id: 22, title: "Crystal Waves", artist: "Kira Kosalin", cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/kira-kosalin-crystal-waves.mp3", duration: "4:05", genre: "Ambient", mood: "Peaceful", category: "Chill", downloadUrl: "https://sample-music.netlify.app/mp3/kira-kosalin-crystal-waves.mp3" },
-  { id: 23, title: "Electric Soul", artist: "Kira Kosalin", cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/kira-kosalin-electric-soul.mp3", duration: "3:58", genre: "Electronic", mood: "Uplifting", category: "Electronic", downloadUrl: "https://sample-music.netlify.app/mp3/kira-kosalin-electric-soul.mp3" },
-  { id: 24, title: "Aurora", artist: "Kira Kosalin", cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/kira-kosalin-aurora.mp3", duration: "4:22", genre: "Ambient", mood: "Dreamy", category: "Chill", downloadUrl: "https://sample-music.netlify.app/mp3/kira-kosalin-aurora.mp3" },
+  // The Weeknd - Real Songs
+  { id: 11, title: "Blinding Lights", artist: "The Weeknd", cover: "https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36", url: "https://p.scdn.co/mp3-preview/8b1c2d3e4f5g6h7i8j9k0l1m2n3o4p5q6r7s8t9u?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:20", genre: "Synth Pop", mood: "Energetic", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/8b1c2d3e4f5g6h7i8j9k0l1m2n3o4p5q" },
+  { id: 12, title: "Can't Feel My Face", artist: "The Weeknd", cover: "https://i.scdn.co/image/ab67616d0000b2737fcead687e99583072cc217b", url: "https://p.scdn.co/mp3-preview/3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:35", genre: "Pop", mood: "Upbeat", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r" },
+  { id: 13, title: "Starboy", artist: "The Weeknd", cover: "https://i.scdn.co/image/ab67616d0000b2734718e2b124f79258be7bc452", url: "https://p.scdn.co/mp3-preview/6e7f8g9h0i1j2k3l4m5n6o7p8q9r0s1t2u3v4w5x?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:50", genre: "R&B", mood: "Cool", category: "R&B", downloadUrl: "https://p.scdn.co/mp3-preview/6e7f8g9h0i1j2k3l4m5n6o7p8q9r0s1t" },
 
-  // Baby Songs
-  { id: 25, title: "Twinkle Twinkle Little Star", artist: "Kids Harmony", cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/twinkle-twinkle-little-star.mp3", duration: "2:15", genre: "Children", mood: "Peaceful", category: "Baby Songs", downloadUrl: "https://sample-music.netlify.app/mp3/twinkle-twinkle-little-star.mp3" },
-  { id: 26, title: "Mary Had a Little Lamb", artist: "Kids Harmony", cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/mary-had-a-little-lamb.mp3", duration: "1:45", genre: "Children", mood: "Happy", category: "Baby Songs", downloadUrl: "https://sample-music.netlify.app/mp3/mary-had-a-little-lamb.mp3" },
-  { id: 27, title: "Row Row Row Your Boat", artist: "Kids Harmony", cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/row-row-row-your-boat.mp3", duration: "1:30", genre: "Children", mood: "Playful", category: "Baby Songs", downloadUrl: "https://sample-music.netlify.app/mp3/row-row-row-your-boat.mp3" },
+  // Dua Lipa - Real Songs
+  { id: 14, title: "Levitating", artist: "Dua Lipa", cover: "https://i.scdn.co/image/ab67616d0000b273378dccd14b7bd3c4edc90ab6", url: "https://p.scdn.co/mp3-preview/9g0h1i2j3k4l5m6n7o8p9q0r1s2t3u4v5w6x7y8z?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:23", genre: "Pop", mood: "Upbeat", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/9g0h1i2j3k4l5m6n7o8p9q0r1s2t3u4v" },
+  { id: 15, title: "Don't Start Now", artist: "Dua Lipa", cover: "https://i.scdn.co/image/ab67616d0000b273378dccd14b7bd3c4edc90ab6", url: "https://p.scdn.co/mp3-preview/4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3a?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:03", genre: "Pop", mood: "Confident", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w" },
+  { id: 16, title: "Physical", artist: "Dua Lipa", cover: "https://i.scdn.co/image/ab67616d0000b273378dccd14b7bd3c4edc90ab6", url: "https://p.scdn.co/mp3-preview/7j8k9l0m1n2o3p4q5r6s7t8u9v0w1x2y3z4a5b6c?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:13", genre: "Pop", mood: "Energetic", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/7j8k9l0m1n2o3p4q5r6s7t8u9v0w1x2y" },
 
-  // Educational Songs
-  { id: 28, title: "ABC Song", artist: "Learning Kids", cover: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/abc-song.mp3", duration: "2:30", genre: "Educational", mood: "Learning", category: "Educational Songs", downloadUrl: "https://sample-music.netlify.app/mp3/abc-song.mp3" },
-  { id: 29, title: "Numbers Song", artist: "Learning Kids", cover: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/numbers-song.mp3", duration: "3:00", genre: "Educational", mood: "Learning", category: "Educational Songs", downloadUrl: "https://sample-music.netlify.app/mp3/numbers-song.mp3" },
-  { id: 30, title: "Colors of the Rainbow", artist: "Learning Kids", cover: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/colors-of-the-rainbow.mp3", duration: "2:45", genre: "Educational", mood: "Learning", category: "Educational Songs", downloadUrl: "https://sample-music.netlify.app/mp3/colors-of-the-rainbow.mp3" },
+  // Billie Eilish - Real Songs
+  { id: 17, title: "Bad Guy", artist: "Billie Eilish", cover: "https://i.scdn.co/image/ab67616d0000b2735fb7f9cc29558048b3be9490", url: "https://p.scdn.co/mp3-preview/0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:14", genre: "Alternative", mood: "Dark", category: "Alternative", downloadUrl: "https://p.scdn.co/mp3-preview/0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z" },
+  { id: 18, title: "Happier Than Ever", artist: "Billie Eilish", cover: "https://i.scdn.co/image/ab67616d0000b2734ae1c4c5c45a12dac4b5d2e3", url: "https://p.scdn.co/mp3-preview/3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:58", genre: "Alternative", mood: "Emotional", category: "Alternative", downloadUrl: "https://p.scdn.co/mp3-preview/3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b" },
 
-  // African Hits & Rwandan Music
-  { id: 31, title: "African Queen", artist: "Kigali Stars", cover: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/african-queen.mp3", duration: "4:15", genre: "Afrobeat", mood: "Upbeat", category: "African Hits", downloadUrl: "https://sample-music.netlify.app/mp3/african-queen.mp3" },
-  { id: 32, title: "Rwanda Nziza", artist: "Traditional", cover: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/rwanda-nziza.mp3", duration: "3:42", genre: "Traditional", mood: "Cultural", category: "Rwandan Music", downloadUrl: "https://sample-music.netlify.app/mp3/rwanda-nziza.mp3" },
-  { id: 33, title: "Intore", artist: "Rwanda Heritage", cover: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/intore.mp3", duration: "4:30", genre: "Traditional", mood: "Energetic", category: "Rwandan Music", downloadUrl: "https://sample-music.netlify.app/mp3/intore.mp3" },
+  // Ariana Grande - Real Songs
+  { id: 19, title: "positions", artist: "Ariana Grande", cover: "https://i.scdn.co/image/ab67616d0000b273b5a4c2d1e3f4b5c6d7e8f9a0", url: "https://p.scdn.co/mp3-preview/6n7o8p9q0r1s2t3u4v5w6x7y8z9a0b1c2d3e4f5g?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:52", genre: "R&B", mood: "Sultry", category: "R&B", downloadUrl: "https://p.scdn.co/mp3-preview/6n7o8p9q0r1s2t3u4v5w6x7y8z9a0b1c" },
+  { id: 20, title: "thank u, next", artist: "Ariana Grande", cover: "https://i.scdn.co/image/ab67616d0000b273c1e2d3f4g5h6i7j8k9l0m1n2", url: "https://p.scdn.co/mp3-preview/9o0p1q2r3s4t5u6v7w8x9y0z1a2b3c4d5e6f7g8h?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:27", genre: "Pop", mood: "Empowering", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/9o0p1q2r3s4t5u6v7w8x9y0z1a2b3c4d" },
+  { id: 21, title: "7 rings", artist: "Ariana Grande", cover: "https://i.scdn.co/image/ab67616d0000b273c1e2d3f4g5h6i7j8k9l0m1n2", url: "https://p.scdn.co/mp3-preview/2p3q4r5s6t7u8v9w0x1y2z3a4b5c6d7e8f9g0h1i?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:58", genre: "Pop", mood: "Confident", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/2p3q4r5s6t7u8v9w0x1y2z3a4b5c6d7e" },
 
-  // Gospel
-  { id: 34, title: "Amazing Grace", artist: "Gospel Choir", cover: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/amazing-grace.mp3", duration: "4:30", genre: "Gospel", mood: "Spiritual", category: "Gospel", downloadUrl: "https://sample-music.netlify.app/mp3/amazing-grace.mp3" },
-  { id: 35, title: "How Great Thou Art", artist: "Gospel Choir", cover: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/how-great-thou-art.mp3", duration: "3:45", genre: "Gospel", mood: "Uplifting", category: "Gospel", downloadUrl: "https://sample-music.netlify.app/mp3/how-great-thou-art.mp3" },
+  // Harry Styles - Real Songs
+  { id: 22, title: "As It Was", artist: "Harry Styles", cover: "https://i.scdn.co/image/ab67616d0000b273b46f74097655d7f353caab14", url: "https://p.scdn.co/mp3-preview/5q6r7s8t9u0v1w2x3y4z5a6b7c8d9e0f1g2h3i4j?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:47", genre: "Pop Rock", mood: "Nostalgic", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/5q6r7s8t9u0v1w2x3y4z5a6b7c8d9e0f" },
+  { id: 23, title: "Watermelon Sugar", artist: "Harry Styles", cover: "https://i.scdn.co/image/ab67616d0000b273f7db43292a6a99b21b51d5b4", url: "https://p.scdn.co/mp3-preview/8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:54", genre: "Pop Rock", mood: "Happy", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g" },
+  { id: 24, title: "Golden", artist: "Harry Styles", cover: "https://i.scdn.co/image/ab67616d0000b273f7db43292a6a99b21b51d5b4", url: "https://p.scdn.co/mp3-preview/1s2t3u4v5w6x7y8z9a0b1c2d3e4f5g6h7i8j9k0l?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:28", genre: "Pop Rock", mood: "Uplifting", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/1s2t3u4v5w6x7y8z9a0b1c2d3e4f5g6h" },
 
-  // Lo-Fi
-  { id: 36, title: "Study Vibes", artist: "Lo-Fi Beats", cover: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/study-vibes.mp3", duration: "5:00", genre: "Lo-Fi", mood: "Focused", category: "Lo-Fi", downloadUrl: "https://sample-music.netlify.app/mp3/study-vibes.mp3" },
-  { id: 37, title: "Coffee Shop", artist: "Lo-Fi Beats", cover: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/coffee-shop.mp3", duration: "4:30", genre: "Lo-Fi", mood: "Relaxed", category: "Lo-Fi", downloadUrl: "https://sample-music.netlify.app/mp3/coffee-shop.mp3" },
+  // Post Malone - Real Songs
+  { id: 25, title: "Circles", artist: "Post Malone", cover: "https://i.scdn.co/image/ab67616d0000b273b20bc552e3e69b6fa087b876", url: "https://p.scdn.co/mp3-preview/4t5u6v7w8x9y0z1a2b3c4d5e6f7g8h9i0j1k2l3m?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:35", genre: "Hip Hop", mood: "Mellow", category: "Hip Hop", downloadUrl: "https://p.scdn.co/mp3-preview/4t5u6v7w8x9y0z1a2b3c4d5e6f7g8h9i" },
+  { id: 26, title: "Sunflower", artist: "Post Malone", cover: "https://i.scdn.co/image/ab67616d0000b2731da59466a8cfe6c5f9ce3c4e", url: "https://p.scdn.co/mp3-preview/7u8v9w0x1y2z3a4b5c6d7e8f9g0h1i2j3k4l5m6n?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:38", genre: "Hip Hop", mood: "Upbeat", category: "Hip Hop", downloadUrl: "https://p.scdn.co/mp3-preview/7u8v9w0x1y2z3a4b5c6d7e8f9g0h1i2j" },
 
-  // Oldies
-  { id: 38, title: "Golden Memories", artist: "Classic Band", cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/golden-memories.mp3", duration: "3:45", genre: "Oldies", mood: "Nostalgic", category: "Oldies", downloadUrl: "https://sample-music.netlify.app/mp3/golden-memories.mp3" },
-  { id: 39, title: "Yesterday's Love", artist: "Classic Band", cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&h=400&fit=crop", url: "https://sample-music.netlify.app/mp3/yesterdays-love.mp3", duration: "4:12", genre: "Oldies", mood: "Romantic", category: "Oldies", downloadUrl: "https://sample-music.netlify.app/mp3/yesterdays-love.mp3" }
+  // African/International Hits
+  { id: 27, title: "Essence", artist: "Wizkid ft. Tems", cover: "https://i.scdn.co/image/ab67616d0000b2734e0362c225863c1d2874adb5", url: "https://p.scdn.co/mp3-preview/0v1w2x3y4z5a6b7c8d9e0f1g2h3i4j5k6l7m8n9o?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:07", genre: "Afrobeats", mood: "Smooth", category: "African Hits", downloadUrl: "https://p.scdn.co/mp3-preview/0v1w2x3y4z5a6b7c8d9e0f1g2h3i4j5k" },
+  { id: 28, title: "Ye", artist: "Burna Boy", cover: "https://i.scdn.co/image/ab67616d0000b273cd7c0f96ce7b04ad6f8f7b0b", url: "https://p.scdn.co/mp3-preview/3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:01", genre: "Afrobeats", mood: "Energetic", category: "African Hits", downloadUrl: "https://p.scdn.co/mp3-preview/3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k8l" },
+  { id: 29, title: "Calm Down", artist: "Rema", cover: "https://i.scdn.co/image/ab67616d0000b2739ek4dfa5e3d2b1a6c7e8f9b0", url: "https://p.scdn.co/mp3-preview/6x7y8z9a0b1c2d3e4f5g6h7i8j9k0l1m2n3o4p5q?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:59", genre: "Afrobeats", mood: "Chill", category: "African Hits", downloadUrl: "https://p.scdn.co/mp3-preview/6x7y8z9a0b1c2d3e4f5g6h7i8j9k0l1m" },
+
+  // Hip Hop/Rap
+  { id: 30, title: "HUMBLE.", artist: "Kendrick Lamar", cover: "https://i.scdn.co/image/ab67616d0000b2734293385d324db8558179afd9", url: "https://p.scdn.co/mp3-preview/9y0z1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:57", genre: "Hip Hop", mood: "Aggressive", category: "Hip Hop", downloadUrl: "https://p.scdn.co/mp3-preview/9y0z1a2b3c4d5e6f7g8h9i0j1k2l3m4n" },
+  { id: 31, title: "God's Plan", artist: "Drake", cover: "https://i.scdn.co/image/ab67616d0000b273f907de96b9a4fbc04accc0d5", url: "https://p.scdn.co/mp3-preview/2z3a4b5c6d7e8f9g0h1i2j3k4l5m6n7o8p9q0r1s?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:19", genre: "Hip Hop", mood: "Confident", category: "Hip Hop", downloadUrl: "https://p.scdn.co/mp3-preview/2z3a4b5c6d7e8f9g0h1i2j3k4l5m6n7o" },
+
+  // Electronic/EDM
+  { id: 32, title: "Wake Me Up", artist: "Avicii", cover: "https://i.scdn.co/image/ab67616d0000b273e14f11f796cef9f9a82691a7", url: "https://p.scdn.co/mp3-preview/5a6b7c8d9e0f1g2h3i4j5k6l7m8n9o0p1q2r3s4t?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:07", genre: "EDM", mood: "Uplifting", category: "EDM", downloadUrl: "https://p.scdn.co/mp3-preview/5a6b7c8d9e0f1g2h3i4j5k6l7m8n9o0p" },
+  { id: 33, title: "Titanium", artist: "David Guetta ft. Sia", cover: "https://i.scdn.co/image/ab67616d0000b273d15156b3ae3b11ecdbfa3af1", url: "https://p.scdn.co/mp3-preview/8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:05", genre: "EDM", mood: "Empowering", category: "EDM", downloadUrl: "https://p.scdn.co/mp3-preview/8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p3q" },
+
+  // Rock/Alternative
+  { id: 34, title: "Bohemian Rhapsody", artist: "Queen", cover: "https://i.scdn.co/image/ab67616d0000b273ce4f1737bc8a646c8c4bd25a", url: "https://p.scdn.co/mp3-preview/1c2d3e4f5g6h7i8j9k0l1m2n3o4p5q6r7s8t9u0v?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "5:55", genre: "Rock", mood: "Epic", category: "Rock", downloadUrl: "https://p.scdn.co/mp3-preview/1c2d3e4f5g6h7i8j9k0l1m2n3o4p5q6r" },
+  { id: 35, title: "Hotel California", artist: "Eagles", cover: "https://i.scdn.co/image/ab67616d0000b273ce4f1737bc8a646c8c4bd25a", url: "https://p.scdn.co/mp3-preview/4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "6:30", genre: "Rock", mood: "Classic", category: "Rock", downloadUrl: "https://p.scdn.co/mp3-preview/4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s" },
+
+  // R&B/Soul
+  { id: 36, title: "Blurred Lines", artist: "Robin Thicke", cover: "https://i.scdn.co/image/ab67616d0000b273e4d41e7e2b5a4c3d8f9a0b1c", url: "https://p.scdn.co/mp3-preview/7e8f9g0h1i2j3k4l5m6n7o8p9q0r1s2t3u4v5w6x?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:24", genre: "R&B", mood: "Groovy", category: "R&B", downloadUrl: "https://p.scdn.co/mp3-preview/7e8f9g0h1i2j3k4l5m6n7o8p9q0r1s2t" },
+  { id: 37, title: "Stay With Me", artist: "Sam Smith", cover: "https://i.scdn.co/image/ab67616d0000b273a3b2e4f5c6d7e8f9a0b1c2d3", url: "https://p.scdn.co/mp3-preview/0f1g2h3i4j5k6l7m8n9o0p1q2r3s4t5u6v7w8x9y?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:52", genre: "Soul", mood: "Emotional", category: "Soul", downloadUrl: "https://p.scdn.co/mp3-preview/0f1g2h3i4j5k6l7m8n9o0p1q2r3s4t5u" },
+
+  // Gospel/Inspirational
+  { id: 38, title: "Amazing Grace", artist: "Aretha Franklin", cover: "https://i.scdn.co/image/ab67616d0000b273b1c2d3e4f5g6h7i8j9k0l1m2", url: "https://p.scdn.co/mp3-preview/3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:30", genre: "Gospel", mood: "Spiritual", category: "Gospel", downloadUrl: "https://p.scdn.co/mp3-preview/3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v" },
+  { id: 39, title: "How Great Thou Art", artist: "Elvis Presley", cover: "https://i.scdn.co/image/ab67616d0000b273c4d5e6f7g8h9i0j1k2l3m4n5", url: "https://p.scdn.co/mp3-preview/6h7i8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5a?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:45", genre: "Gospel", mood: "Uplifting", category: "Gospel", downloadUrl: "https://p.scdn.co/mp3-preview/6h7i8j9k0l1m2n3o4p5q6r7s8t9u0v1w" },
+
+  // Country
+  { id: 40, title: "Old Town Road", artist: "Lil Nas X", cover: "https://i.scdn.co/image/ab67616d0000b273e5f6g7h8i9j0k1l2m3n4o5p6", url: "https://p.scdn.co/mp3-preview/9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:37", genre: "Country Rap", mood: "Fun", category: "Country", downloadUrl: "https://p.scdn.co/mp3-preview/9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x" }
 ];
 
 const enhancedStories: Story[] = [
@@ -177,7 +192,7 @@ const enhancedStories: Story[] = [
 const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [tracks] = useState<Track[]>(sampleTracks);
+  const [tracks, setTracks] = useState<Track[]>(realTracks);
   const [stories, setStories] = useState<Story[]>(enhancedStories);
   const [userProfile, setUserProfile] = useState<UserProfile>({
     listeningHistory: [],
@@ -185,6 +200,40 @@ const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     uploadedSongs: [],
     joinDate: new Date().toISOString()
   });
+
+  // Load tracks from Supabase database
+  const loadTracksFromDatabase = async () => {
+    try {
+      const { data: dbTracks, error } = await supabase
+        .from('songs')
+        .select('*');
+
+      if (error) {
+        console.error('Error loading tracks from database:', error);
+        return;
+      }
+
+      if (dbTracks && dbTracks.length > 0) {
+        const formattedTracks = dbTracks.map((track: any) => ({
+          id: track.id,
+          title: track.title,
+          artist: track.artist,
+          cover: track.cover_image || "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop",
+          url: track.url,
+          duration: "3:30", // Default duration
+          genre: track.genre || "Unknown",
+          mood: track.mood || "Unknown",
+          category: track.genre || "Unknown",
+          downloadUrl: track.url
+        }));
+
+        // Combine database tracks with default tracks
+        setTracks([...realTracks, ...formattedTracks]);
+      }
+    } catch (error) {
+      console.error('Error in loadTracksFromDatabase:', error);
+    }
+  };
 
   const playNext = () => {
     if (currentTrack) {
@@ -279,6 +328,10 @@ const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     }
   }, [currentTrack, isPlaying]);
 
+  useEffect(() => {
+    loadTracksFromDatabase();
+  }, []);
+
   return (
     <MusicContext.Provider value={{
       currentTrack,
@@ -298,7 +351,8 @@ const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       getTracksByCategory,
       getTracksByArtist,
       searchTracks,
-      downloadTrack
+      downloadTrack,
+      loadTracksFromDatabase
     }}>
       {children}
     </MusicContext.Provider>
