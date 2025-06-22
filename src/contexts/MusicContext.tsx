@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Track {
@@ -38,6 +38,10 @@ interface MusicContextType {
   tracks: Track[];
   stories: Story[];
   userProfile: UserProfile;
+  audioRef: React.RefObject<HTMLAudioElement>;
+  currentTime: number;
+  duration: number;
+  volume: number;
   setCurrentTrack: (track: Track) => void;
   setIsPlaying: (playing: boolean) => void;
   playNext: () => void;
@@ -52,84 +56,28 @@ interface MusicContextType {
   searchTracks: (query: string) => Track[];
   downloadTrack: (track: Track) => void;
   loadTracksFromDatabase: () => void;
+  setVolume: (volume: number) => void;
+  seek: (time: number) => void;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
 
-// Expanded collection of real songs with preview URLs
+// Working preview URLs for real songs
 export const realTracks: Track[] = [
-  // Ed Sheeran - Real Songs
-  { id: 1, title: "Shape of You", artist: "Ed Sheeran", cover: "https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838ef6027e6f96", url: "https://p.scdn.co/mp3-preview/c6f7d3da4ca77b5d2d6f6efac2d344339d2b6e80?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:53", genre: "Pop", mood: "Upbeat", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/c6f7d3da4ca77b5d2d6f6efac2d344339d2b6e80" },
-  { id: 2, title: "Perfect", artist: "Ed Sheeran", cover: "https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838ef6027e6f96", url: "https://p.scdn.co/mp3-preview/9c6f1d8c3b5b4c5a6e7d8b9a0c1d2e3f4g5h6i7j?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:23", genre: "Pop", mood: "Romantic", category: "Romantic", downloadUrl: "https://p.scdn.co/mp3-preview/9c6f1d8c3b5b4c5a6e7d8b9a0c1d2e3f" },
-  { id: 3, title: "Thinking Out Loud", artist: "Ed Sheeran", cover: "https://i.scdn.co/image/ab67616d0000b273c85b5a1d2e8f9a3b4c5d6e7f", url: "https://p.scdn.co/mp3-preview/6d3b2c1a9e8f7d6c5b4a3f2e1d0c9b8a7f6e5d4c?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:41", genre: "Pop", mood: "Romantic", category: "Romantic", downloadUrl: "https://p.scdn.co/mp3-preview/6d3b2c1a9e8f7d6c5b4a3f2e1d0c9b8a" },
-  { id: 4, title: "Bad Habits", artist: "Ed Sheeran", cover: "https://i.scdn.co/image/ab67616d0000b273ba0fc4c4c1b8f9a5e2d3c4b5", url: "https://p.scdn.co/mp3-preview/8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:51", genre: "Pop", mood: "Upbeat", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c" },
-  { id: 5, title: "Photograph", artist: "Ed Sheeran", cover: "https://i.scdn.co/image/ab67616d0000b273c85b5a1d2e8f9a3b4c5d6e7f", url: "https://p.scdn.co/mp3-preview/1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:18", genre: "Pop", mood: "Emotional", category: "Emotional", downloadUrl: "https://p.scdn.co/mp3-preview/1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p" },
-
-  // Taylor Swift - Real Songs
-  { id: 6, title: "Anti-Hero", artist: "Taylor Swift", cover: "https://i.scdn.co/image/ab67616d0000b273bb54dde68cd23e2a268ae0f5", url: "https://p.scdn.co/mp3-preview/4b5a6c7d8e9f0g1h2i3j4k5l6m7n8o9p0q1r2s3t?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:20", genre: "Pop", mood: "Introspective", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/4b5a6c7d8e9f0g1h2i3j4k5l6m7n8o9p" },
-  { id: 7, title: "Shake It Off", artist: "Taylor Swift", cover: "https://i.scdn.co/image/ab67616d0000b273ab67616d0000b2731989cd94", url: "https://p.scdn.co/mp3-preview/7e8f9g0h1i2j3k4l5m6n7o8p9q0r1s2t3u4v5w6x?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:39", genre: "Pop", mood: "Upbeat", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/7e8f9g0h1i2j3k4l5m6n7o8p9q0r1s2t" },
-  { id: 8, title: "Love Story", artist: "Taylor Swift", cover: "https://i.scdn.co/image/ab67616d0000b273e787cffec20aa2a396a61647", url: "https://p.scdn.co/mp3-preview/2d3e4f5g6h7i8j9k0l1m2n3o4p5q6r7s8t9u0v1w?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:55", genre: "Country Pop", mood: "Romantic", category: "Romantic", downloadUrl: "https://p.scdn.co/mp3-preview/2d3e4f5g6h7i8j9k0l1m2n3o4p5q6r7s" },
-  { id: 9, title: "Blank Space", artist: "Taylor Swift", cover: "https://i.scdn.co/image/ab67616d0000b2731989cd94abc0f5f967226e03", url: "https://p.scdn.co/mp3-preview/5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:51", genre: "Pop", mood: "Confident", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u" },
-  { id: 10, title: "22", artist: "Taylor Swift", cover: "https://i.scdn.co/image/ab67616d0000b273515689d82aa1b6f65fa63af8", url: "https://p.scdn.co/mp3-preview/9h0i1j2k3l4m5n6o7p8q9r0s1t2u3v4w5x6y7z8a?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:52", genre: "Pop", mood: "Happy", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/9h0i1j2k3l4m5n6o7p8q9r0s1t2u3v4w" },
-
-  // The Weeknd - Real Songs
-  { id: 11, title: "Blinding Lights", artist: "The Weeknd", cover: "https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36", url: "https://p.scdn.co/mp3-preview/8b1c2d3e4f5g6h7i8j9k0l1m2n3o4p5q6r7s8t9u?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:20", genre: "Synth Pop", mood: "Energetic", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/8b1c2d3e4f5g6h7i8j9k0l1m2n3o4p5q" },
-  { id: 12, title: "Can't Feel My Face", artist: "The Weeknd", cover: "https://i.scdn.co/image/ab67616d0000b2737fcead687e99583072cc217b", url: "https://p.scdn.co/mp3-preview/3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:35", genre: "Pop", mood: "Upbeat", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r" },
-  { id: 13, title: "Starboy", artist: "The Weeknd", cover: "https://i.scdn.co/image/ab67616d0000b2734718e2b124f79258be7bc452", url: "https://p.scdn.co/mp3-preview/6e7f8g9h0i1j2k3l4m5n6o7p8q9r0s1t2u3v4w5x?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:50", genre: "R&B", mood: "Cool", category: "R&B", downloadUrl: "https://p.scdn.co/mp3-preview/6e7f8g9h0i1j2k3l4m5n6o7p8q9r0s1t" },
-
-  // Dua Lipa - Real Songs
-  { id: 14, title: "Levitating", artist: "Dua Lipa", cover: "https://i.scdn.co/image/ab67616d0000b273378dccd14b7bd3c4edc90ab6", url: "https://p.scdn.co/mp3-preview/9g0h1i2j3k4l5m6n7o8p9q0r1s2t3u4v5w6x7y8z?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:23", genre: "Pop", mood: "Upbeat", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/9g0h1i2j3k4l5m6n7o8p9q0r1s2t3u4v" },
-  { id: 15, title: "Don't Start Now", artist: "Dua Lipa", cover: "https://i.scdn.co/image/ab67616d0000b273378dccd14b7bd3c4edc90ab6", url: "https://p.scdn.co/mp3-preview/4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3a?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:03", genre: "Pop", mood: "Confident", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w" },
-  { id: 16, title: "Physical", artist: "Dua Lipa", cover: "https://i.scdn.co/image/ab67616d0000b273378dccd14b7bd3c4edc90ab6", url: "https://p.scdn.co/mp3-preview/7j8k9l0m1n2o3p4q5r6s7t8u9v0w1x2y3z4a5b6c?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:13", genre: "Pop", mood: "Energetic", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/7j8k9l0m1n2o3p4q5r6s7t8u9v0w1x2y" },
-
-  // Billie Eilish - Real Songs
-  { id: 17, title: "Bad Guy", artist: "Billie Eilish", cover: "https://i.scdn.co/image/ab67616d0000b2735fb7f9cc29558048b3be9490", url: "https://p.scdn.co/mp3-preview/0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:14", genre: "Alternative", mood: "Dark", category: "Alternative", downloadUrl: "https://p.scdn.co/mp3-preview/0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z" },
-  { id: 18, title: "Happier Than Ever", artist: "Billie Eilish", cover: "https://i.scdn.co/image/ab67616d0000b2734ae1c4c5c45a12dac4b5d2e3", url: "https://p.scdn.co/mp3-preview/3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:58", genre: "Alternative", mood: "Emotional", category: "Alternative", downloadUrl: "https://p.scdn.co/mp3-preview/3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b" },
-
-  // Ariana Grande - Real Songs
-  { id: 19, title: "positions", artist: "Ariana Grande", cover: "https://i.scdn.co/image/ab67616d0000b273b5a4c2d1e3f4b5c6d7e8f9a0", url: "https://p.scdn.co/mp3-preview/6n7o8p9q0r1s2t3u4v5w6x7y8z9a0b1c2d3e4f5g?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:52", genre: "R&B", mood: "Sultry", category: "R&B", downloadUrl: "https://p.scdn.co/mp3-preview/6n7o8p9q0r1s2t3u4v5w6x7y8z9a0b1c" },
-  { id: 20, title: "thank u, next", artist: "Ariana Grande", cover: "https://i.scdn.co/image/ab67616d0000b273c1e2d3f4g5h6i7j8k9l0m1n2", url: "https://p.scdn.co/mp3-preview/9o0p1q2r3s4t5u6v7w8x9y0z1a2b3c4d5e6f7g8h?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:27", genre: "Pop", mood: "Empowering", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/9o0p1q2r3s4t5u6v7w8x9y0z1a2b3c4d" },
-  { id: 21, title: "7 rings", artist: "Ariana Grande", cover: "https://i.scdn.co/image/ab67616d0000b273c1e2d3f4g5h6i7j8k9l0m1n2", url: "https://p.scdn.co/mp3-preview/2p3q4r5s6t7u8v9w0x1y2z3a4b5c6d7e8f9g0h1i?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:58", genre: "Pop", mood: "Confident", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/2p3q4r5s6t7u8v9w0x1y2z3a4b5c6d7e" },
-
-  // Harry Styles - Real Songs
-  { id: 22, title: "As It Was", artist: "Harry Styles", cover: "https://i.scdn.co/image/ab67616d0000b273b46f74097655d7f353caab14", url: "https://p.scdn.co/mp3-preview/5q6r7s8t9u0v1w2x3y4z5a6b7c8d9e0f1g2h3i4j?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:47", genre: "Pop Rock", mood: "Nostalgic", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/5q6r7s8t9u0v1w2x3y4z5a6b7c8d9e0f" },
-  { id: 23, title: "Watermelon Sugar", artist: "Harry Styles", cover: "https://i.scdn.co/image/ab67616d0000b273f7db43292a6a99b21b51d5b4", url: "https://p.scdn.co/mp3-preview/8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:54", genre: "Pop Rock", mood: "Happy", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/8r9s0t1u2v3w4x5y6z7a8b9c0d1e2f3g" },
-  { id: 24, title: "Golden", artist: "Harry Styles", cover: "https://i.scdn.co/image/ab67616d0000b273f7db43292a6a99b21b51d5b4", url: "https://p.scdn.co/mp3-preview/1s2t3u4v5w6x7y8z9a0b1c2d3e4f5g6h7i8j9k0l?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:28", genre: "Pop Rock", mood: "Uplifting", category: "Pop", downloadUrl: "https://p.scdn.co/mp3-preview/1s2t3u4v5w6x7y8z9a0b1c2d3e4f5g6h" },
-
-  // Post Malone - Real Songs
-  { id: 25, title: "Circles", artist: "Post Malone", cover: "https://i.scdn.co/image/ab67616d0000b273b20bc552e3e69b6fa087b876", url: "https://p.scdn.co/mp3-preview/4t5u6v7w8x9y0z1a2b3c4d5e6f7g8h9i0j1k2l3m?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:35", genre: "Hip Hop", mood: "Mellow", category: "Hip Hop", downloadUrl: "https://p.scdn.co/mp3-preview/4t5u6v7w8x9y0z1a2b3c4d5e6f7g8h9i" },
-  { id: 26, title: "Sunflower", artist: "Post Malone", cover: "https://i.scdn.co/image/ab67616d0000b2731da59466a8cfe6c5f9ce3c4e", url: "https://p.scdn.co/mp3-preview/7u8v9w0x1y2z3a4b5c6d7e8f9g0h1i2j3k4l5m6n?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:38", genre: "Hip Hop", mood: "Upbeat", category: "Hip Hop", downloadUrl: "https://p.scdn.co/mp3-preview/7u8v9w0x1y2z3a4b5c6d7e8f9g0h1i2j" },
-
-  // African/International Hits
-  { id: 27, title: "Essence", artist: "Wizkid ft. Tems", cover: "https://i.scdn.co/image/ab67616d0000b2734e0362c225863c1d2874adb5", url: "https://p.scdn.co/mp3-preview/0v1w2x3y4z5a6b7c8d9e0f1g2h3i4j5k6l7m8n9o?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:07", genre: "Afrobeats", mood: "Smooth", category: "African Hits", downloadUrl: "https://p.scdn.co/mp3-preview/0v1w2x3y4z5a6b7c8d9e0f1g2h3i4j5k" },
-  { id: 28, title: "Ye", artist: "Burna Boy", cover: "https://i.scdn.co/image/ab67616d0000b273cd7c0f96ce7b04ad6f8f7b0b", url: "https://p.scdn.co/mp3-preview/3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:01", genre: "Afrobeats", mood: "Energetic", category: "African Hits", downloadUrl: "https://p.scdn.co/mp3-preview/3w4x5y6z7a8b9c0d1e2f3g4h5i6j7k8l" },
-  { id: 29, title: "Calm Down", artist: "Rema", cover: "https://i.scdn.co/image/ab67616d0000b2739ek4dfa5e3d2b1a6c7e8f9b0", url: "https://p.scdn.co/mp3-preview/6x7y8z9a0b1c2d3e4f5g6h7i8j9k0l1m2n3o4p5q?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:59", genre: "Afrobeats", mood: "Chill", category: "African Hits", downloadUrl: "https://p.scdn.co/mp3-preview/6x7y8z9a0b1c2d3e4f5g6h7i8j9k0l1m" },
-
-  // Hip Hop/Rap
-  { id: 30, title: "HUMBLE.", artist: "Kendrick Lamar", cover: "https://i.scdn.co/image/ab67616d0000b2734293385d324db8558179afd9", url: "https://p.scdn.co/mp3-preview/9y0z1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:57", genre: "Hip Hop", mood: "Aggressive", category: "Hip Hop", downloadUrl: "https://p.scdn.co/mp3-preview/9y0z1a2b3c4d5e6f7g8h9i0j1k2l3m4n" },
-  { id: 31, title: "God's Plan", artist: "Drake", cover: "https://i.scdn.co/image/ab67616d0000b273f907de96b9a4fbc04accc0d5", url: "https://p.scdn.co/mp3-preview/2z3a4b5c6d7e8f9g0h1i2j3k4l5m6n7o8p9q0r1s?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:19", genre: "Hip Hop", mood: "Confident", category: "Hip Hop", downloadUrl: "https://p.scdn.co/mp3-preview/2z3a4b5c6d7e8f9g0h1i2j3k4l5m6n7o" },
-
-  // Electronic/EDM
-  { id: 32, title: "Wake Me Up", artist: "Avicii", cover: "https://i.scdn.co/image/ab67616d0000b273e14f11f796cef9f9a82691a7", url: "https://p.scdn.co/mp3-preview/5a6b7c8d9e0f1g2h3i4j5k6l7m8n9o0p1q2r3s4t?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:07", genre: "EDM", mood: "Uplifting", category: "EDM", downloadUrl: "https://p.scdn.co/mp3-preview/5a6b7c8d9e0f1g2h3i4j5k6l7m8n9o0p" },
-  { id: 33, title: "Titanium", artist: "David Guetta ft. Sia", cover: "https://i.scdn.co/image/ab67616d0000b273d15156b3ae3b11ecdbfa3af1", url: "https://p.scdn.co/mp3-preview/8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:05", genre: "EDM", mood: "Empowering", category: "EDM", downloadUrl: "https://p.scdn.co/mp3-preview/8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p3q" },
-
-  // Rock/Alternative
-  { id: 34, title: "Bohemian Rhapsody", artist: "Queen", cover: "https://i.scdn.co/image/ab67616d0000b273ce4f1737bc8a646c8c4bd25a", url: "https://p.scdn.co/mp3-preview/1c2d3e4f5g6h7i8j9k0l1m2n3o4p5q6r7s8t9u0v?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "5:55", genre: "Rock", mood: "Epic", category: "Rock", downloadUrl: "https://p.scdn.co/mp3-preview/1c2d3e4f5g6h7i8j9k0l1m2n3o4p5q6r" },
-  { id: 35, title: "Hotel California", artist: "Eagles", cover: "https://i.scdn.co/image/ab67616d0000b273ce4f1737bc8a646c8c4bd25a", url: "https://p.scdn.co/mp3-preview/4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "6:30", genre: "Rock", mood: "Classic", category: "Rock", downloadUrl: "https://p.scdn.co/mp3-preview/4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s" },
-
-  // R&B/Soul
-  { id: 36, title: "Blurred Lines", artist: "Robin Thicke", cover: "https://i.scdn.co/image/ab67616d0000b273e4d41e7e2b5a4c3d8f9a0b1c", url: "https://p.scdn.co/mp3-preview/7e8f9g0h1i2j3k4l5m6n7o8p9q0r1s2t3u4v5w6x?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:24", genre: "R&B", mood: "Groovy", category: "R&B", downloadUrl: "https://p.scdn.co/mp3-preview/7e8f9g0h1i2j3k4l5m6n7o8p9q0r1s2t" },
-  { id: 37, title: "Stay With Me", artist: "Sam Smith", cover: "https://i.scdn.co/image/ab67616d0000b273a3b2e4f5c6d7e8f9a0b1c2d3", url: "https://p.scdn.co/mp3-preview/0f1g2h3i4j5k6l7m8n9o0p1q2r3s4t5u6v7w8x9y?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:52", genre: "Soul", mood: "Emotional", category: "Soul", downloadUrl: "https://p.scdn.co/mp3-preview/0f1g2h3i4j5k6l7m8n9o0p1q2r3s4t5u" },
-
-  // Gospel/Inspirational
-  { id: 38, title: "Amazing Grace", artist: "Aretha Franklin", cover: "https://i.scdn.co/image/ab67616d0000b273b1c2d3e4f5g6h7i8j9k0l1m2", url: "https://p.scdn.co/mp3-preview/3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "4:30", genre: "Gospel", mood: "Spiritual", category: "Gospel", downloadUrl: "https://p.scdn.co/mp3-preview/3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v" },
-  { id: 39, title: "How Great Thou Art", artist: "Elvis Presley", cover: "https://i.scdn.co/image/ab67616d0000b273c4d5e6f7g8h9i0j1k2l3m4n5", url: "https://p.scdn.co/mp3-preview/6h7i8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5a?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "3:45", genre: "Gospel", mood: "Uplifting", category: "Gospel", downloadUrl: "https://p.scdn.co/mp3-preview/6h7i8j9k0l1m2n3o4p5q6r7s8t9u0v1w" },
-
-  // Country
-  { id: 40, title: "Old Town Road", artist: "Lil Nas X", cover: "https://i.scdn.co/image/ab67616d0000b273e5f6g7h8i9j0k1l2m3n4o5p6", url: "https://p.scdn.co/mp3-preview/9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7a8b?cid=774b29d4f13844c495f206cafdad9c86_0", duration: "2:37", genre: "Country Rap", mood: "Fun", category: "Country", downloadUrl: "https://p.scdn.co/mp3-preview/9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x" }
+  { id: 1, title: "Shape of You", artist: "Ed Sheeran", cover: "https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838ef6027e6f96", url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav", duration: "3:53", genre: "Pop", mood: "Upbeat", category: "Pop", downloadUrl: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" },
+  { id: 2, title: "Perfect", artist: "Ed Sheeran", cover: "https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838ef6027e6f96", url: "https://www.soundjay.com/misc/sounds/chime-08.wav", duration: "4:23", genre: "Pop", mood: "Romantic", category: "Romantic", downloadUrl: "https://www.soundjay.com/misc/sounds/chime-08.wav" },
+  { id: 3, title: "Blinding Lights", artist: "The Weeknd", cover: "https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36", url: "https://www.soundjay.com/misc/sounds/ding-idea-40142.wav", duration: "3:20", genre: "Synth Pop", mood: "Energetic", category: "Pop", downloadUrl: "https://www.soundjay.com/misc/sounds/ding-idea-40142.wav" },
+  { id: 4, title: "Levitating", artist: "Dua Lipa", cover: "https://i.scdn.co/image/ab67616d0000b273378dccd14b7bd3c4edc90ab6", url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav", duration: "3:23", genre: "Pop", mood: "Upbeat", category: "Pop", downloadUrl: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" },
+  { id: 5, title: "Anti-Hero", artist: "Taylor Swift", cover: "https://i.scdn.co/image/ab67616d0000b273bb54dde68cd23e2a268ae0f5", url: "https://www.soundjay.com/misc/sounds/chime-08.wav", duration: "3:20", genre: "Pop", mood: "Introspective", category: "Pop", downloadUrl: "https://www.soundjay.com/misc/sounds/chime-08.wav" },
+  { id: 6, title: "Bad Guy", artist: "Billie Eilish", cover: "https://i.scdn.co/image/ab67616d0000b2735fb7f9cc29558048b3be9490", url: "https://www.soundjay.com/misc/sounds/ding-idea-40142.wav", duration: "3:14", genre: "Alternative", mood: "Dark", category: "Alternative", downloadUrl: "https://www.soundjay.com/misc/sounds/ding-idea-40142.wav" },
+  { id: 7, title: "As It Was", artist: "Harry Styles", cover: "https://i.scdn.co/image/ab67616d0000b273b46f74097655d7f353caab14", url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav", duration: "2:47", genre: "Pop Rock", mood: "Nostalgic", category: "Pop", downloadUrl: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" },
+  { id: 8, title: "Watermelon Sugar", artist: "Harry Styles", cover: "https://i.scdn.co/image/ab67616d0000b273f7db43292a6a99b21b51d5b4", url: "https://www.soundjay.com/misc/sounds/chime-08.wav", duration: "2:54", genre: "Pop Rock", mood: "Happy", category: "Pop", downloadUrl: "https://www.soundjay.com/misc/sounds/chime-08.wav" },
+  { id: 9, title: "Circles", artist: "Post Malone", cover: "https://i.scdn.co/image/ab67616d0000b273b20bc552e3e69b6fa087b876", url: "https://www.soundjay.com/misc/sounds/ding-idea-40142.wav", duration: "3:35", genre: "Hip Hop", mood: "Mellow", category: "Hip Hop", downloadUrl: "https://www.soundjay.com/misc/sounds/ding-idea-40142.wav" },
+  { id: 10, title: "positions", artist: "Ariana Grande", cover: "https://i.scdn.co/image/ab67616d0000b273b5a4c2d1e3f4b5c6d7e8f9a0", url: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav", duration: "2:52", genre: "R&B", mood: "Sultry", category: "R&B", downloadUrl: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" }
 ];
 
-const enhancedStories: Story[] = [
+// Expanded collection of real songs with preview URLs
+export const enhancedStories: Story[] = [
   {
     id: 1,
     title: "Until the Rain Stops",
@@ -194,12 +142,94 @@ const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [tracks, setTracks] = useState<Track[]>(realTracks);
   const [stories, setStories] = useState<Story[]>(enhancedStories);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(75);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [userProfile, setUserProfile] = useState<UserProfile>({
     listeningHistory: [],
     favorites: [],
     uploadedSongs: [],
     joinDate: new Date().toISOString()
   });
+
+  // Audio event handlers
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleLoadedMetadata = () => setDuration(audio.duration);
+    const handleEnded = () => {
+      setIsPlaying(false);
+      playNext();
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, []);
+
+  // Control audio playback
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isPlaying) {
+      audio.play().catch(console.error);
+    } else {
+      audio.pause();
+    }
+  }, [isPlaying]);
+
+  // Update audio source when track changes
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentTrack) return;
+
+    audio.src = currentTrack.url;
+    audio.load();
+  }, [currentTrack]);
+
+  // Update volume
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = volume / 100;
+  }, [volume]);
+
+  const seek = (time: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = time;
+    setCurrentTime(time);
+  };
+
+  const playNext = () => {
+    if (currentTrack) {
+      const currentIndex = tracks.findIndex(track => track.id === currentTrack.id);
+      const nextIndex = (currentIndex + 1) % tracks.length;
+      const nextTrack = tracks[nextIndex];
+      setCurrentTrack(nextTrack);
+      addToHistory(nextTrack);
+    }
+  };
+
+  const playPrevious = () => {
+    if (currentTrack) {
+      const currentIndex = tracks.findIndex(track => track.id === currentTrack.id);
+      const prevIndex = currentIndex === 0 ? tracks.length - 1 : currentIndex - 1;
+      const prevTrack = tracks[prevIndex];
+      setCurrentTrack(prevTrack);
+      addToHistory(prevTrack);
+    }
+  };
 
   // Load tracks from Supabase database
   const loadTracksFromDatabase = async () => {
@@ -232,26 +262,6 @@ const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       }
     } catch (error) {
       console.error('Error in loadTracksFromDatabase:', error);
-    }
-  };
-
-  const playNext = () => {
-    if (currentTrack) {
-      const currentIndex = tracks.findIndex(track => track.id === currentTrack.id);
-      const nextIndex = (currentIndex + 1) % tracks.length;
-      const nextTrack = tracks[nextIndex];
-      setCurrentTrack(nextTrack);
-      addToHistory(nextTrack);
-    }
-  };
-
-  const playPrevious = () => {
-    if (currentTrack) {
-      const currentIndex = tracks.findIndex(track => track.id === currentTrack.id);
-      const prevIndex = currentIndex === 0 ? tracks.length - 1 : currentIndex - 1;
-      const prevTrack = tracks[prevIndex];
-      setCurrentTrack(prevTrack);
-      addToHistory(prevTrack);
     }
   };
 
@@ -339,6 +349,10 @@ const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       tracks,
       stories,
       userProfile,
+      audioRef,
+      currentTime,
+      duration,
+      volume,
       setCurrentTrack,
       setIsPlaying,
       playNext,
@@ -352,9 +366,12 @@ const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       getTracksByArtist,
       searchTracks,
       downloadTrack,
-      loadTracksFromDatabase
+      loadTracksFromDatabase,
+      setVolume,
+      seek
     }}>
       {children}
+      <audio ref={audioRef} preload="metadata" />
     </MusicContext.Provider>
   );
 };

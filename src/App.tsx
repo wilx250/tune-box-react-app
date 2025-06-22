@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +22,7 @@ import Chat from "./pages/Chat";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import MusicUpload from "./components/MusicUpload";
+import AudioPlayer from "./components/AudioPlayer";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +56,7 @@ const App = () => (
                 </Routes>
               </main>
               <Footer />
+              <AudioPlayer />
             </div>
           </BrowserRouter>
         </TooltipProvider>

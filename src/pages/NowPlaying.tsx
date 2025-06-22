@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -7,50 +7,24 @@ import { Play, Pause, SkipBack, SkipForward, Heart, Volume2, Repeat, Shuffle } f
 import { useMusic } from '@/contexts/MusicContext';
 
 const NowPlaying = () => {
-  const { currentTrack, isPlaying, setIsPlaying, playNext, playPrevious, tracks } = useMusic();
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState([75]);
+  const { 
+    currentTrack, 
+    isPlaying, 
+    setIsPlaying, 
+    playNext, 
+    playPrevious, 
+    tracks,
+    currentTime,
+    duration,
+    volume,
+    setVolume,
+    seek
+  } = useMusic();
 
   const track = currentTrack || tracks[0];
 
-  useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.play();
-      } else {
-        audioRef.current.pause();
-      }
-    }
-  }, [isPlaying]);
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume[0] / 100;
-    }
-  }, [volume]);
-
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-    }
-  };
-
-  const handleLoadedMetadata = () => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration);
-    }
-  };
-
-  const handleSeek = (newTime: number[]) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = newTime[0];
-      setCurrentTime(newTime[0]);
-    }
-  };
-
   const formatTime = (time: number) => {
+    if (isNaN(time)) return '0:00';
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -58,6 +32,14 @@ const NowPlaying = () => {
 
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
+  };
+
+  const handleSeek = (newTime: number[]) => {
+    seek(newTime[0]);
+  };
+
+  const handleVolumeChange = (newVolume: number[]) => {
+    setVolume(newVolume[0]);
   };
 
   return (
@@ -139,11 +121,11 @@ const NowPlaying = () => {
               <div className="flex items-center space-x-3">
                 <Volume2 size={20} className="text-gray-400" />
                 <Slider
-                  value={volume}
+                  value={[volume]}
                   max={100}
                   step={1}
                   className="flex-1"
-                  onValueChange={setVolume}
+                  onValueChange={handleVolumeChange}
                 />
               </div>
 
@@ -157,14 +139,6 @@ const NowPlaying = () => {
           </div>
         </CardContent>
       </Card>
-
-      <audio
-        ref={audioRef}
-        src={track.url}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onEnded={playNext}
-      />
     </div>
   );
 };
